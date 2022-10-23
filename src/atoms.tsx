@@ -1,8 +1,15 @@
-import { atom } from "recoil";
+import { atom, selector } from "recoil";
 
 export const isLightState = atom<boolean>({
-	key: "isLightState",
-	default: JSON.parse(localStorage.getItem("isLight") ?? JSON.stringify(true)),
+	key: "isLigh",
+	default: window.matchMedia("(prefers-color-scheme: light)").matches
+		? true
+		: false,
+});
+
+export const isDraggingTaskState = atom<boolean>({
+	key: "isDraggingTask",
+	default: true,
 });
 
 export interface IToDo {
@@ -14,24 +21,32 @@ interface IToDoState {
 	[key: string]: IToDo[];
 }
 
-export const categoryState = atom<string[]>({
-	key: "category",
+export const categoriesState = atom<string[]>({
+	key: "categories",
 	default: ["해야 함", "하는 중", "끝"],
 });
 
-export const toDoState = atom<IToDoState>({
-	key: "toDo",
+// 이렇게 하면 좋기는 하겠는데 순서 정보가 필요해서 쓰기가 좀 그럼
+// export const categoriesState = selector({
+// 	key: "categories",
+// 	get: ({ get }) => {
+// 		return Object.keys(get(toDoState));
+// 	},
+// });
+
+export const toDosState = atom<IToDoState>({
+	key: "toDos",
 	default: {
 		"해야 함": [
 			{ text: "빨래 널기", id: 0 },
 			{ text: "코로나 검사하기", id: 1 },
-			{ text: "강의 듣기", id: 2 },
-			{ text: "책 읽기", id: 3 },
-			{ text: "키친타올 사기", id: 4 },
-			{ text: "커피 마시기", id: 5 },
-			{ text: "오버워치 하기", id: 6 },
-			{ text: "공부하기", id: 7 },
-			{ text: "운동하기", id: 8 },
+			{ text: "책 읽기", id: 2 },
+			{ text: "마스크 사기", id: 3 },
+			{ text: "커피 마시기", id: 4 },
+			{ text: "설거지 하기", id: 5 },
+			{ text: "공부하기", id: 6 },
+			{ text: "운동하기", id: 7 },
+			{ text: "이건 이름이 되게 긴데 마우스를 여기에도 올려보세요", id: 8 },
 			{ text: "할", id: 9 },
 			{ text: "일이", id: 10 },
 			{ text: "왤케", id: 11 },

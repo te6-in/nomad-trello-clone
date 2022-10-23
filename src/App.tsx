@@ -3,16 +3,21 @@ import { lightTheme, darkTheme } from "./theme";
 import {
 	DragDropContext,
 	Draggable,
-	DraggableStateSnapshot,
 	DraggingStyle,
+	DragStart,
 	Droppable,
 	DropResult,
 	NotDraggingStyle,
 } from "react-beautiful-dnd";
-import { useRecoilState } from "recoil";
-import { categoryState, isLightState, toDoState } from "./atoms";
+import { useRecoilState, useRecoilValue } from "recoil";
+import {
+	categoriesState,
+	isDraggingTaskState,
+	isLightState,
+	toDosState,
+} from "./atoms";
 import Board, { MaterialIcon } from "./Components/Board";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const GlobalStyle = createGlobalStyle`
 html, body, div, span, applet, object, iframe,
@@ -85,7 +90,7 @@ const Navigation = styled.nav`
 	padding: 2.5rem 3rem;
 	align-items: center;
 	justify-content: space-between;
-	width: 100%;
+	width: 100vw;
 	color: ${(props) => props.theme.textColor};
 `;
 
@@ -114,10 +119,16 @@ const Button = styled.button`
 	border: none;
 	transition: color 0.3s;
 	padding: 0;
+	border-radius: 0.2rem;
 
-	&:hover {
+	&:hover,
+	&:focus {
 		cursor: pointer;
 		color: ${(props) => props.theme.accentColor};
+	}
+
+	&:focus {
+		outline: 0.15rem solid ${(props) => props.theme.accentColor};
 	}
 `;
 
@@ -132,10 +143,28 @@ const Boards = styled.div`
 	margin-left: 2rem;
 `;
 
-function getStyle(
-	style: DraggingStyle | NotDraggingStyle,
-	snapshot: DraggableStateSnapshot
-) {
+const Trash = styled.div`
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	position: fixed;
+	top: 7.5rem;
+	right: -4rem;
+	width: 8rem;
+	height: 8rem;
+	border-radius: 33%;
+	background-color: tomato;
+	box-shadow: -0.1rem 0 0.4rem rgb(210 77 77 / 15%);
+	font-size: 2.25rem;
+	z-index: 5;
+
+	& > div {
+		margin-right: 4rem;
+		color: rgba(0, 0, 0, 0.6);
+	}
+`;
+
+function getStyle(style: DraggingStyle | NotDraggingStyle) {
 	if (style?.transform) {
 		const axisLockX = `${style.transform.split(",").shift()}, 0px)`;
 		return {
@@ -150,8 +179,19 @@ function App() {
 	const [isLight, setIsLight] = useRecoilState(isLightState);
 	const toggleTheme = () => setIsLight((current) => !current);
 
-	const [toDos, setToDos] = useRecoilState(toDoState);
-	const [categories, setCategories] = useRecoilState(categoryState);
+	const [isDraggingTask, setIsDraggingTask] =
+		useRecoilState(isDraggingTaskState);
+
+	const [toDos, setToDos] = useRecoilState(toDosState);
+	const [categories, setCategories] = useRecoilState(categoriesState);
+
+	useEffect(() => {
+		window
+			.matchMedia("(prefers-color-scheme: light")
+			.addEventListener("change", (e) => {
+				setIsLight(e.matches);
+			});
+	}, []);
 
 	const onAdd = () => {
 		const name = window.prompt("새 보드의 이름을 입력해주세요.")?.trim();
@@ -180,13 +220,67 @@ function App() {
 		}
 	};
 
-	useEffect(() => {
-		localStorage.setItem("isLight", JSON.stringify(isLight));
-	}, [isLight]);
+	const onDragStart = ({ source: { droppableId } }: DragStart) => {
+		if (droppableId === "BOARDS") {
+			setIsDraggingTask(false);
+		} else {
+			setIsDraggingTask(true);
+		}
+	};
 
-	const onDragEnd = ({ type, source, destination }: DropResult) => {
-		if (type === "BOARD") {
+	const onDragEnd = ({ draggableId, source, destination }: DropResult) => {
+		console.log(source, destination);
+
+		if (source.droppableId === "boards") {
 			if (!destination) return;
+
+			if (destination.droppableId === "trash") {
+				const boardId = categories[source.index];
+
+				setToDos((prev) => {
+					const toDosCopy = { ...prev };
+					delete toDosCopy[boardId];
+
+					return toDosCopy;
+				});
+
+				setCategories((prev) =>
+					prev.filter((category) => category !== boardId)
+				);
+
+				return;
+			}
+
+			if (source.index === destination.index) return;
+
+			if (source.index !== destination.index) {
+				setCategories((oldCategories) => {
+					const categoryCopy = [...oldCategories];
+					const prevCategory = categoryCopy[source.index];
+
+					categoryCopy.splice(source.index, 1);
+					categoryCopy.splice(destination.index, 0, prevCategory);
+
+					return categoryCopy;
+				});
+			}
+		} else if (source.droppableId !== "boards") {
+			if (!destination) return;
+
+			if (destination.droppableId === "trash") {
+				setToDos((prev) => {
+					const boardCopy = [...prev[source.droppableId]];
+					const toDoIndex = boardCopy.findIndex(
+						(toDo) => toDo.id + "" === draggableId
+					);
+
+					boardCopy.splice(toDoIndex, 1);
+
+					return { ...prev, [source.droppableId]: boardCopy };
+				});
+				return;
+			}
+
 			if (source.droppableId === destination.droppableId) {
 				setToDos((oldToDos) => {
 					const boardCopy = [...oldToDos[source.droppableId]];
@@ -201,6 +295,7 @@ function App() {
 					};
 				});
 			}
+
 			if (source.droppableId !== destination.droppableId) {
 				setToDos((oldToDos) => {
 					const sourceCopy = [...oldToDos[source.droppableId]];
@@ -215,20 +310,6 @@ function App() {
 						[source.droppableId]: sourceCopy,
 						[destination.droppableId]: destinationCopy,
 					};
-				});
-			}
-		} else if (type === "BOARDS") {
-			if (!destination) return;
-			if (source.index === destination.index) return;
-			if (source.index !== destination.index) {
-				setCategories((oldCategories) => {
-					const categoryCopy = [...oldCategories];
-					const prevCategory = categoryCopy[source.index];
-
-					categoryCopy.splice(source.index, 1);
-					categoryCopy.splice(destination.index, 0, prevCategory);
-
-					return categoryCopy;
 				});
 			}
 		}
@@ -248,8 +329,12 @@ function App() {
 					</Button>
 				</Buttons>
 			</Navigation>
-			<DragDropContext onDragEnd={onDragEnd}>
-				<Droppable droppableId="boards" type="BOARDS" direction="horizontal">
+			<DragDropContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
+				<Droppable
+					droppableId="boards"
+					direction="horizontal"
+					isDropDisabled={isDraggingTask}
+				>
 					{(provided, snapshot) => (
 						<Boards ref={provided.innerRef} {...provided.droppableProps}>
 							{categories.map((boardId, index) => (
@@ -261,13 +346,23 @@ function App() {
 											key={boardId}
 											toDos={toDos[boardId]}
 											isHovering={snapshot.isDragging}
-											style={getStyle(provided.draggableProps.style!, snapshot)}
+											style={getStyle(provided.draggableProps.style!)}
 										/>
 									)}
 								</Draggable>
 							))}
 							{provided.placeholder}
 						</Boards>
+					)}
+				</Droppable>
+				<Droppable droppableId="trash">
+					{(provided, snapshot) => (
+						<div>
+							<Trash ref={provided.innerRef} {...provided.droppableProps}>
+								<MaterialIcon name="delete" />
+							</Trash>
+							{provided.placeholder}
+						</div>
 					)}
 				</Droppable>
 			</DragDropContext>

@@ -8,22 +8,28 @@ import DraggableCard from "./DraggableCard";
 import styled from "styled-components";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { categoryState, IToDo, toDoState } from "../atoms";
-import { useRecoilState, useSetRecoilState } from "recoil";
+import {
+	categoriesState,
+	isDraggingTaskState,
+	IToDo,
+	toDosState,
+} from "../atoms";
+import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
 import React from "react";
 
 interface MaterialIconProps {
 	name: string;
+	Tag?: keyof JSX.IntrinsicElements;
 }
 
-export function MaterialIcon({ name }: MaterialIconProps) {
+export function MaterialIcon({ name, Tag = "div" }: MaterialIconProps) {
 	return (
-		<div
+		<Tag
 			className="material-icons-round"
 			style={{ fontSize: "inherit", userSelect: "none" }}
 		>
 			{name}
-		</div>
+		</Tag>
 	);
 }
 
@@ -35,6 +41,7 @@ const Overlay = styled.div`
 	flex-direction: column;
 	position: absolute;
 	pointer-events: none;
+	z-index: 1;
 
 	& > * {
 		pointer-events: all;
@@ -42,9 +49,10 @@ const Overlay = styled.div`
 `;
 
 const Title = styled.div`
-	display: flex;
+	/* display: flex;
 	align-items: center;
-	justify-content: space-between;
+	justify-content: space-between; */
+	display: block;
 	font-size: 1.6rem;
 	font-weight: 600;
 	width: 16rem;
@@ -55,11 +63,12 @@ const Title = styled.div`
 	user-select: none;
 
 	& > h2 {
-		max-width: 7.2rem;
+		width: 13.5rem;
 		margin-top: 0.2rem;
 		text-overflow: ellipsis;
 		overflow: hidden;
 		white-space: nowrap;
+		transition: width 0.3s;
 	}
 
 	&.background {
@@ -71,9 +80,13 @@ const Title = styled.div`
 
 const Buttons = styled.div`
 	display: flex;
+	position: absolute;
+	top: 1.25rem;
+	right: 1.25rem;
 	align-items: center;
 	gap: 0.2rem;
 	color: ${(props) => props.theme.secondaryTextColor};
+	transition: opacity 0.3s;
 `;
 
 const Button = styled.button`
@@ -91,7 +104,8 @@ const Button = styled.button`
 	transition: background-color 0.3s, color 0.3s, opacity 0.3s;
 
 	&:hover,
-	&:active {
+	&:active,
+	&:focus {
 		cursor: pointer;
 		background-color: ${(props) => props.theme.hoverButtonOverlayColor};
 	}
@@ -137,7 +151,7 @@ const Form = styled.form`
 		position: absolute;
 		right: 0;
 		width: 3.5rem;
-		height: 100%;
+		height: 3.5rem;
 		background-color: transparent;
 		border: none;
 		border-radius: 0 0 0.8rem 0;
@@ -175,7 +189,7 @@ const ToDos = styled.ul`
 	}
 `;
 
-const Empty = styled.div`
+const Empty = styled.li`
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -223,11 +237,6 @@ const Container = styled.div<{ isDraggingOver: boolean }>`
 		background-color: rgba(0, 0, 0, 0.3);
 	}
 
-	&.dragging ${Button} {
-		color: white;
-		opacity: 0.6;
-	}
-
 	&:has(li.dragging) ${Form}.end, &.dragging ${Form}.end {
 		opacity: 0.5;
 
@@ -239,6 +248,15 @@ const Container = styled.div<{ isDraggingOver: boolean }>`
 				color: white;
 			}
 		}
+	}
+
+	&:not(:hover):not(:focus-within) ${Buttons}, &.dragging ${Buttons} {
+		opacity: 0;
+	}
+
+	&:hover ${Title} > h2,
+	&:focus-within ${Title} > h2 {
+		width: 7.1rem;
 	}
 `;
 
@@ -261,8 +279,9 @@ function Board({
 	isHovering,
 	style,
 }: IBoardProps) {
-	const setToDos = useSetRecoilState(toDoState);
-	const [categories, setCategories] = useRecoilState(categoryState);
+	const setToDos = useSetRecoilState(toDosState);
+	const [categories, setCategories] = useRecoilState(categoriesState);
+	const isDraggingTask = useRecoilValue(isDraggingTaskState);
 
 	const [isScrolled, setIsScrolled] = useState(false);
 	const [isEnd, setIsEnd] = useState(false);
@@ -287,6 +306,10 @@ function Board({
 	const { register, setValue, handleSubmit } = useForm<IForm>();
 
 	const onValid = ({ toDo }: IForm) => {
+		if (toDo.trim() === "") {
+			return;
+		}
+
 		const newToDo = {
 			id: Date.now(),
 			text: toDo,
@@ -304,7 +327,7 @@ function Board({
 
 	const onEdit = () => {
 		const newName = window
-			.prompt(`${boardId} 보드의 새 이름을 입력해주세요.`)
+			.prompt(`${boardId} 보드의 새 이름을 입력해주세요.`, boardId)
 			?.trim();
 
 		if (newName !== null && newName !== undefined) {
@@ -351,24 +374,25 @@ function Board({
 			// 이건 됨
 			setCategories((prev) => prev.filter((category) => category !== boardId));
 
-			// 이건 안 됨
+			// 혹은
 			// setCategories((prev) => {
 			// 	const categoriesCopy = [...prev];
-			// 	return categoriesCopy.splice(categoriesCopy.indexOf(boardId), 1);
+			// 	categoriesCopy.splice(categoriesCopy.indexOf(boardId), 1);
+			//  return categoriesCopy;
 			// });
 
-			// 이것도 안 됨
+			// 아니면
 			// setCategories((prev) => {
 			// 	const categoriesCopy = [...prev];
-			// 	return categoriesCopy.splice(
-			// 		categoriesCopy.findIndex((category) => boardId === category, 1)
+			// 	categoriesCopy.splice(categoriesCopy.findIndex((category) => boardId === category, 1);
+			//  return categoriesCopy;
 			// 	);
 			// });
 		}
 	};
 
 	return (
-		<Droppable droppableId={boardId} type={"BOARD"}>
+		<Droppable droppableId={boardId} isDropDisabled={!isDraggingTask}>
 			{(provided, snapshot) => (
 				<Container
 					isDraggingOver={snapshot.isDraggingOver}
@@ -383,11 +407,11 @@ function Board({
 						<Title className={isScrolled ? "background" : ""}>
 							<h2>{boardId}</h2>
 							<Buttons>
-								<Button onClick={onDelete}>
-									<MaterialIcon name="delete" />
-								</Button>
 								<Button onClick={onEdit}>
 									<MaterialIcon name="edit" />
+								</Button>
+								<Button onClick={onDelete}>
+									<MaterialIcon name="delete" />
 								</Button>
 								<Button as="div" {...parentProvided.dragHandleProps}>
 									<MaterialIcon name="drag_handle" />
@@ -419,9 +443,12 @@ function Board({
 								toDoText={toDo.text}
 								key={toDo.id}
 								index={index}
+								boardId={boardId}
 							/>
 						))}
-						{toDos.length === 0 ? <Empty>비어 있습니다.</Empty> : null}
+						{toDos.length === 0 ? (
+							<Empty>이 보드는 비어 있습니다.</Empty>
+						) : null}
 						{provided.placeholder}
 					</ToDos>
 				</Container>
