@@ -1,0 +1,10 @@
+{
+  "files": {
+    "main.js": "/nomad-trello-clone/static/js/main.7a631822.js",
+    "index.html": "/nomad-trello-clone/index.html",
+    "main.7a631822.js.map": "/nomad-trello-clone/static/js/main.7a631822.js.map"
+  },
+  "entrypoints": [
+    "static/js/main.7a631822.js"
+  ]
+}
