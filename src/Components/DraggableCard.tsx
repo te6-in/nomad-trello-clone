@@ -54,6 +54,11 @@ const Card = styled.li`
 		box-shadow: 0 0.4rem 0.8rem rgba(0, 0, 0, 0.25);
 	}
 
+	&.dragging-over-trash {
+		background-color: tomato !important;
+		color: white;
+	}
+
 	&:focus-within {
 		background-color: ${(props) => props.theme.accentColor};
 		outline: 0.15rem solid ${(props) => props.theme.textColor};
@@ -147,7 +152,9 @@ function DraggableCard({
 		<Draggable draggableId={toDoId + ""} index={index}>
 			{(provided, snapshot) => (
 				<Card
-					className={snapshot.isDragging ? "dragging" : ""}
+					className={`${snapshot.isDragging ? "dragging" : ""} ${
+						snapshot.draggingOver === "trash" ? "dragging-over-trash" : ""
+					}`}
 					ref={provided.innerRef}
 					{...provided.draggableProps}
 					{...provided.dragHandleProps}

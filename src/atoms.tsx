@@ -1,4 +1,4 @@
-import { atom, selector } from "recoil";
+import { atom } from "recoil";
 
 export const isLightState = atom<boolean>({
 	key: "isLigh",
@@ -16,9 +16,24 @@ interface IToDoState {
 	[key: string]: IToDo[];
 }
 
+const localStorageEffect =
+	(key: string) =>
+	({ setSelf, onSet }: any) => {
+		const savedValue = localStorage.getItem(key);
+
+		if (savedValue != null) {
+			setSelf(JSON.parse(savedValue));
+		}
+
+		onSet((newValue: IToDoState | string[]) => {
+			localStorage.setItem(key, JSON.stringify(newValue));
+		});
+	};
+
 export const categoriesState = atom<string[]>({
 	key: "categories",
 	default: ["해야 함", "하는 중", "끝"],
+	effects: [localStorageEffect("categories")],
 });
 
 // 이렇게 하면 좋기는 하겠는데 순서 정보가 필요해서 쓰기가 좀 그럼
@@ -62,6 +77,10 @@ export const toDosState = atom<IToDoState>({
 			{ text: "할 일 12", id: 26 },
 		],
 		"하는 중": [],
-		끝: [{ text: "은행 다녀오기", id: 27 }],
+		끝: [
+			{ text: "은행 다녀오기", id: 27 },
+			{ text: "보드나 할 일을 추가해보세요!", id: 28 },
+		],
 	},
+	effects: [localStorageEffect("toDos")],
 });

@@ -1,3 +1,4 @@
+import React from "react";
 import {
 	DraggableProvided,
 	Droppable,
@@ -9,8 +10,7 @@ import styled from "styled-components";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { categoriesState, IToDo, toDosState } from "../atoms";
-import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
-import React from "react";
+import { useRecoilState, useSetRecoilState } from "recoil";
 
 interface MaterialIconProps {
 	name: string;
