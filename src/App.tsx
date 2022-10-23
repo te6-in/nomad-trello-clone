@@ -4,18 +4,12 @@ import {
 	DragDropContext,
 	Draggable,
 	DraggingStyle,
-	DragStart,
 	Droppable,
 	DropResult,
 	NotDraggingStyle,
 } from "react-beautiful-dnd";
-import { useRecoilState, useRecoilValue } from "recoil";
-import {
-	categoriesState,
-	isDraggingTaskState,
-	isLightState,
-	toDosState,
-} from "./atoms";
+import { useRecoilState } from "recoil";
+import { categoriesState, isLightState, toDosState } from "./atoms";
 import Board, { MaterialIcon } from "./Components/Board";
 import { useEffect, useState } from "react";
 
@@ -179,9 +173,6 @@ function App() {
 	const [isLight, setIsLight] = useRecoilState(isLightState);
 	const toggleTheme = () => setIsLight((current) => !current);
 
-	const [isDraggingTask, setIsDraggingTask] =
-		useRecoilState(isDraggingTaskState);
-
 	const [toDos, setToDos] = useRecoilState(toDosState);
 	const [categories, setCategories] = useRecoilState(categoriesState);
 
@@ -220,20 +211,11 @@ function App() {
 		}
 	};
 
-	const onDragStart = ({ source: { droppableId } }: DragStart) => {
-		if (droppableId === "BOARDS") {
-			setIsDraggingTask(false);
-		} else {
-			setIsDraggingTask(true);
-		}
-	};
-
 	const onDragEnd = ({ draggableId, source, destination }: DropResult) => {
-		console.log(source, destination);
-
 		if (source.droppableId === "boards") {
 			if (!destination) return;
 
+			// 쓸 일 없음...
 			if (destination.droppableId === "trash") {
 				const boardId = categories[source.index];
 
@@ -329,12 +311,8 @@ function App() {
 					</Button>
 				</Buttons>
 			</Navigation>
-			<DragDropContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
-				<Droppable
-					droppableId="boards"
-					direction="horizontal"
-					isDropDisabled={isDraggingTask}
-				>
+			<DragDropContext onDragEnd={onDragEnd}>
+				<Droppable droppableId="boards" direction="horizontal" type="BOARDS">
 					{(provided, snapshot) => (
 						<Boards ref={provided.innerRef} {...provided.droppableProps}>
 							{categories.map((boardId, index) => (
@@ -355,7 +333,7 @@ function App() {
 						</Boards>
 					)}
 				</Droppable>
-				<Droppable droppableId="trash">
+				<Droppable droppableId="trash" type="BOARD">
 					{(provided, snapshot) => (
 						<div>
 							<Trash ref={provided.innerRef} {...provided.droppableProps}>

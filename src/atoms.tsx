@@ -7,11 +7,6 @@ export const isLightState = atom<boolean>({
 		: false,
 });
 
-export const isDraggingTaskState = atom<boolean>({
-	key: "isDraggingTask",
-	default: true,
-});
-
 export interface IToDo {
 	id: number;
 	text: string;

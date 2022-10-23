@@ -8,12 +8,7 @@ import DraggableCard from "./DraggableCard";
 import styled from "styled-components";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import {
-	categoriesState,
-	isDraggingTaskState,
-	IToDo,
-	toDosState,
-} from "../atoms";
+import { categoriesState, IToDo, toDosState } from "../atoms";
 import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
 import React from "react";
 
@@ -281,7 +276,6 @@ function Board({
 }: IBoardProps) {
 	const setToDos = useSetRecoilState(toDosState);
 	const [categories, setCategories] = useRecoilState(categoriesState);
-	const isDraggingTask = useRecoilValue(isDraggingTaskState);
 
 	const [isScrolled, setIsScrolled] = useState(false);
 	const [isEnd, setIsEnd] = useState(false);
@@ -392,7 +386,7 @@ function Board({
 	};
 
 	return (
-		<Droppable droppableId={boardId} isDropDisabled={!isDraggingTask}>
+		<Droppable droppableId={boardId} type="BOARD">
 			{(provided, snapshot) => (
 				<Container
 					isDraggingOver={snapshot.isDraggingOver}
