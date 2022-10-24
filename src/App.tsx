@@ -9,7 +9,7 @@ import {
 	NotDraggingStyle,
 } from "react-beautiful-dnd";
 import { useRecoilState } from "recoil";
-import { categoriesState, isLightState, toDosState } from "./atoms";
+import { isLightState, toDosState } from "./atoms";
 import Board, { MaterialIcon } from "./Components/Board";
 import { useEffect } from "react";
 
@@ -181,7 +181,6 @@ function App() {
 	const toggleTheme = () => setIsLight((current) => !current);
 
 	const [toDos, setToDos] = useRecoilState(toDosState);
-	const [categories, setCategories] = useRecoilState(categoriesState);
 
 	useEffect(() => {
 		window
@@ -199,21 +198,8 @@ function App() {
 				alert("이름을 입력해주세요.");
 				return;
 			}
-
-			if (name && categories.includes(name)) {
-				alert(`${name} 보드가 이미 있습니다.`);
-				return;
-			}
-
-			setCategories((prev) => {
-				return [...prev, name];
-			});
-
 			setToDos((prev) => {
-				return {
-					...prev,
-					[name]: [],
-				};
+				return [...prev, { title: name, id: Date.now(), toDos: [] }];
 			});
 		}
 	};
@@ -223,82 +209,110 @@ function App() {
 			if (!destination) return;
 
 			// 쓸 일 없음...
-			if (destination.droppableId === "trash") {
-				const boardId = categories[source.index];
+			// if (destination.droppableId === "trash") {
+			// 	const boardId = categories[source.index];
 
-				setToDos((prev) => {
-					const toDosCopy = { ...prev };
-					delete toDosCopy[boardId];
+			// 	setToDos((prev) => {
+			// 		const toDosCopy = { ...prev };
+			// 		delete toDosCopy[boardId];
 
-					return toDosCopy;
-				});
+			// 		return toDosCopy;
+			// 	});
 
-				setCategories((prev) =>
-					prev.filter((category) => category !== boardId)
-				);
+			// 	setCategories((prev) =>
+			// 		prev.filter((category) => category !== boardId)
+			// 	);
 
-				return;
-			}
+			// 	return;
+			// }
 
 			if (source.index === destination.index) return;
 
+			// 보드 순서 변경
 			if (source.index !== destination.index) {
-				setCategories((oldCategories) => {
-					const categoryCopy = [...oldCategories];
-					const prevCategory = categoryCopy[source.index];
+				setToDos((prev) => {
+					const toDosCopy = [...prev];
+					const prevBoard = toDosCopy[source.index];
 
-					categoryCopy.splice(source.index, 1);
-					categoryCopy.splice(destination.index, 0, prevCategory);
+					toDosCopy.splice(source.index, 1);
+					toDosCopy.splice(destination.index, 0, prevBoard);
 
-					return categoryCopy;
+					return toDosCopy;
 				});
 			}
 		} else if (source.droppableId !== "boards") {
 			if (!destination) return;
 
+			// 태스크 삭제
 			if (destination.droppableId === "trash") {
 				setToDos((prev) => {
-					const boardCopy = [...prev[source.droppableId]];
-					const toDoIndex = boardCopy.findIndex(
-						(toDo) => toDo.id + "" === draggableId
+					const toDosCopy = [...prev];
+					const boardIndex = toDosCopy.findIndex(
+						(board) => board.id + "" === source.droppableId.split("-")[1]
 					);
+					const boardCopy = { ...toDosCopy[boardIndex] };
+					const listCopy = [...boardCopy.toDos];
 
-					boardCopy.splice(toDoIndex, 1);
+					listCopy.splice(source.index, 1);
+					boardCopy.toDos = listCopy;
+					toDosCopy.splice(boardIndex, 1, boardCopy);
 
-					return { ...prev, [source.droppableId]: boardCopy };
+					return toDosCopy;
 				});
 				return;
 			}
 
+			// 태스크 순서 변경(보드 내)
 			if (source.droppableId === destination.droppableId) {
-				setToDos((oldToDos) => {
-					const boardCopy = [...oldToDos[source.droppableId]];
-					const prevToDo = boardCopy[source.index];
+				setToDos((prev) => {
+					const toDosCopy = [...prev];
+					const boardIndex = toDosCopy.findIndex(
+						(board) => board.id + "" === source.droppableId.split("-")[1]
+					);
+					const boardCopy = { ...toDosCopy[boardIndex] };
+					const listCopy = [...boardCopy.toDos];
+					const prevToDo = boardCopy.toDos[source.index];
 
-					boardCopy.splice(source.index, 1);
-					boardCopy.splice(destination.index, 0, prevToDo);
+					listCopy.splice(source.index, 1);
+					listCopy.splice(destination.index, 0, prevToDo);
 
-					return {
-						...oldToDos,
-						[source.droppableId]: boardCopy,
-					};
+					boardCopy.toDos = listCopy;
+					toDosCopy.splice(boardIndex, 1, boardCopy);
+
+					return toDosCopy;
 				});
 			}
 
+			// 태스크 순서 변경(보드 간)
 			if (source.droppableId !== destination.droppableId) {
-				setToDos((oldToDos) => {
-					const sourceCopy = [...oldToDos[source.droppableId]];
-					const destinationCopy = [...oldToDos[destination.droppableId]];
-					const prevToDo = sourceCopy[source.index];
+				setToDos((prev) => {
+					const toDosCopy = [...prev];
 
-					sourceCopy.splice(source.index, 1);
-					destinationCopy.splice(destination.index, 0, prevToDo);
+					const sourceBoardIndex = toDosCopy.findIndex(
+						(board) => board.id + "" === source.droppableId.split("-")[1]
+					);
+					const destinationBoardIndex = toDosCopy.findIndex(
+						(board) => board.id + "" === destination.droppableId.split("-")[1]
+					);
 
-					return {
-						...oldToDos,
-						[source.droppableId]: sourceCopy,
-						[destination.droppableId]: destinationCopy,
-					};
+					const sourceBoardCopy = { ...toDosCopy[sourceBoardIndex] };
+					const destinationBoardCopy = { ...toDosCopy[destinationBoardIndex] };
+
+					const sourceListCopy = [...sourceBoardCopy.toDos];
+					const destinationListCopy = [...destinationBoardCopy.toDos];
+
+					const prevToDo = sourceBoardCopy.toDos[source.index];
+
+					sourceListCopy.splice(source.index, 1);
+					destinationListCopy.splice(destination.index, 0, prevToDo);
+
+					sourceBoardCopy.toDos = sourceListCopy;
+					destinationBoardCopy.toDos = destinationListCopy;
+
+					toDosCopy.splice(sourceBoardIndex, 1, sourceBoardCopy);
+					toDosCopy.splice(destinationBoardIndex, 1, destinationBoardCopy);
+
+					return toDosCopy;
 				});
 			}
 		}
@@ -322,14 +336,16 @@ function App() {
 				<Droppable droppableId="boards" direction="horizontal" type="BOARDS">
 					{(provided, snapshot) => (
 						<Boards ref={provided.innerRef} {...provided.droppableProps}>
-							{categories.map((boardId, index) => (
-								<Draggable draggableId={boardId} key={boardId} index={index}>
+							{toDos.map((board, index) => (
+								<Draggable
+									draggableId={"board-" + board.id}
+									key={board.id}
+									index={index}
+								>
 									{(provided, snapshot) => (
 										<Board
+											board={board}
 											parentProvided={provided}
-											boardId={boardId}
-											key={boardId}
-											toDos={toDos[boardId]}
 											isHovering={snapshot.isDragging}
 											style={getStyle(provided.draggableProps.style!)}
 										/>

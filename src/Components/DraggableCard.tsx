@@ -2,7 +2,7 @@ import React from "react";
 import { Draggable } from "react-beautiful-dnd";
 import { useSetRecoilState } from "recoil";
 import styled from "styled-components";
-import { toDosState } from "../atoms";
+import { IToDo, toDosState } from "../atoms";
 import { MaterialIcon } from "./Board";
 
 const Button = styled.button`
@@ -93,23 +93,17 @@ const Card = styled.li`
 `;
 
 interface IDraggableCardProps {
-	toDoId: number;
-	toDoText: string;
+	toDo: IToDo;
 	index: number;
-	boardId: string;
+	boardId: number;
 }
 
-function DraggableCard({
-	toDoId,
-	toDoText,
-	index,
-	boardId,
-}: IDraggableCardProps) {
+function DraggableCard({ toDo, index, boardId }: IDraggableCardProps) {
 	const setToDos = useSetRecoilState(toDosState);
 
 	const onEdit = () => {
 		const newToDoText = window
-			.prompt(`${toDoText} 할 일의 새 이름을 입력해주세요.`, toDoText)
+			.prompt(`${toDo.text} 할 일의 새 이름을 입력해주세요.`, toDo.text)
 			?.trim();
 
 		if (newToDoText !== null && newToDoText !== undefined) {
@@ -119,37 +113,45 @@ function DraggableCard({
 			}
 
 			setToDos((prev) => {
-				const boardCopy = [...prev[boardId]];
-				const toDoIndex = boardCopy.findIndex((toDo) => toDo.id === toDoId);
+				const toDosCopy = [...prev];
+				const boardIndex = toDosCopy.findIndex((board) => board.id === boardId);
+				const boardCopy = { ...toDosCopy[boardIndex] };
+				const listCopy = [...boardCopy.toDos];
+				const toDoIndex = boardCopy.toDos.findIndex((td) => td.id === toDo.id);
 
-				// 이건 왜 read-only 오류가 나는 건지 알아보기
-				// boardCopy[toDoIndex].text = newToDoText;
-
-				boardCopy.splice(toDoIndex, 1, {
+				listCopy.splice(toDoIndex, 1, {
 					text: newToDoText,
-					id: toDoId,
+					id: toDo.id,
 				});
 
-				return { ...prev, [boardId]: boardCopy };
+				boardCopy.toDos = listCopy;
+				toDosCopy.splice(boardIndex, 1, boardCopy);
+
+				return toDosCopy;
 			});
 		}
 	};
 
 	const onDelete = () => {
-		if (window.confirm(`${toDoText} 할 일을 삭제하시겠습니까?`)) {
+		if (window.confirm(`${toDo.text} 할 일을 삭제하시겠습니까?`)) {
 			setToDos((prev) => {
-				const boardCopy = [...prev[boardId]];
-				const toDoIndex = boardCopy.findIndex((toDo) => toDo.id === toDoId);
+				const toDosCopy = [...prev];
+				const boardIndex = toDosCopy.findIndex((board) => board.id === boardId);
+				const boardCopy = { ...toDosCopy[boardIndex] };
+				const listCopy = [...boardCopy.toDos];
+				const toDoIndex = boardCopy.toDos.findIndex((td) => td.id === toDo.id);
 
-				boardCopy.splice(toDoIndex, 1);
+				listCopy.splice(toDoIndex, 1);
+				boardCopy.toDos = listCopy;
+				toDosCopy.splice(boardIndex, 1, boardCopy);
 
-				return { ...prev, [boardId]: boardCopy };
+				return toDosCopy;
 			});
 		}
 	};
 
 	return (
-		<Draggable draggableId={toDoId + ""} index={index}>
+		<Draggable draggableId={"todo-" + toDo.id} index={index}>
 			{(provided, snapshot) => (
 				<Card
 					className={`${snapshot.isDragging ? "dragging" : ""} ${
@@ -159,7 +161,7 @@ function DraggableCard({
 					{...provided.draggableProps}
 					{...provided.dragHandleProps}
 				>
-					<div>{toDoText}</div>
+					<div>{toDo.text}</div>
 					<Buttons>
 						<Button onClick={onEdit}>
 							<MaterialIcon name="edit" />

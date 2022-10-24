@@ -9,8 +9,8 @@ import DraggableCard from "./DraggableCard";
 import styled from "styled-components";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { categoriesState, IToDo, toDosState } from "../atoms";
-import { useRecoilState, useSetRecoilState } from "recoil";
+import { IBoard, toDosState } from "../atoms";
+import { useSetRecoilState } from "recoil";
 
 interface MaterialIconProps {
 	name: string;
@@ -194,6 +194,7 @@ const Empty = styled.li`
 	margin-bottom: 1.6rem;
 	cursor: default;
 	transition: color 0.3s;
+	user-select: none;
 `;
 
 const Container = styled.div<{ isDraggingOver: boolean }>`
@@ -218,6 +219,10 @@ const Container = styled.div<{ isDraggingOver: boolean }>`
 
 	&.dragging ${Title} {
 		color: white;
+
+		& > h2 {
+			width: 13.5rem !important;
+		}
 	}
 
 	&:has(li.dragging) ${Form}, &.dragging ${Form} {
@@ -256,8 +261,7 @@ const Container = styled.div<{ isDraggingOver: boolean }>`
 `;
 
 interface IBoardProps {
-	toDos: IToDo[];
-	boardId: string;
+	board: IBoard;
 	parentProvided: DraggableProvided;
 	isHovering: boolean;
 	style: DraggingStyle | NotDraggingStyle;
@@ -267,15 +271,8 @@ interface IForm {
 	toDo: string;
 }
 
-function Board({
-	toDos,
-	boardId,
-	parentProvided,
-	isHovering,
-	style,
-}: IBoardProps) {
+function Board({ board, parentProvided, isHovering, style }: IBoardProps) {
 	const setToDos = useSetRecoilState(toDosState);
-	const [categories, setCategories] = useRecoilState(categoriesState);
 
 	const [isScrolled, setIsScrolled] = useState(false);
 	const [isEnd, setIsEnd] = useState(false);
@@ -310,10 +307,14 @@ function Board({
 		};
 
 		setToDos((prev) => {
-			return {
-				...prev,
-				[boardId]: [newToDo, ...prev[boardId]],
-			};
+			const toDosCopy = [...prev];
+			const boardIndex = prev.findIndex((b) => b.id === board.id);
+			const boardCopy = { ...prev[boardIndex] };
+
+			boardCopy.toDos = [...boardCopy.toDos, newToDo];
+			toDosCopy.splice(boardIndex, 1, boardCopy);
+
+			return toDosCopy;
 		});
 
 		setValue("toDo", "");
@@ -321,7 +322,7 @@ function Board({
 
 	const onEdit = () => {
 		const newName = window
-			.prompt(`${boardId} 보드의 새 이름을 입력해주세요.`, boardId)
+			.prompt(`${board.title} 보드의 새 이름을 입력해주세요.`, board.title)
 			?.trim();
 
 		if (newName !== null && newName !== undefined) {
@@ -330,26 +331,17 @@ function Board({
 				return;
 			}
 
-			if (newName === boardId) {
+			if (newName === board.title) {
 				return;
 			}
-
-			if (newName && categories.includes(newName)) {
-				alert(`${newName} 보드가 이미 있습니다.`);
-				return;
-			}
-
-			setCategories((prev) => {
-				return prev.map((category) =>
-					category === boardId ? newName : category
-				);
-			});
 
 			setToDos((prev) => {
-				const toDosCopy = { ...prev };
-				delete Object.assign(toDosCopy, { [newName]: toDosCopy[boardId] })[
-					boardId
-				];
+				const toDosCopy = [...prev];
+				const boardIndex = toDosCopy.findIndex((b) => b.id === board.id);
+				const boardCopy = { ...toDosCopy[boardIndex] };
+
+				boardCopy.title = newName;
+				toDosCopy.splice(boardIndex, 1, boardCopy);
 
 				return toDosCopy;
 			});
@@ -357,36 +349,20 @@ function Board({
 	};
 
 	const onDelete = () => {
-		if (window.confirm(`${boardId} 보드를 삭제하시겠습니까?`)) {
+		if (window.confirm(`${board.title} 보드를 삭제하시겠습니까?`)) {
 			setToDos((prev) => {
-				const toDosCopy = { ...prev };
-				delete toDosCopy[boardId];
+				const toDosCopy = [...prev];
+				const boardIndex = toDosCopy.findIndex((b) => b.id === board.id);
+
+				toDosCopy.splice(boardIndex, 1);
 
 				return toDosCopy;
 			});
-
-			// 이건 됨
-			setCategories((prev) => prev.filter((category) => category !== boardId));
-
-			// 혹은
-			// setCategories((prev) => {
-			// 	const categoriesCopy = [...prev];
-			// 	categoriesCopy.splice(categoriesCopy.indexOf(boardId), 1);
-			//  return categoriesCopy;
-			// });
-
-			// 아니면
-			// setCategories((prev) => {
-			// 	const categoriesCopy = [...prev];
-			// 	categoriesCopy.splice(categoriesCopy.findIndex((category) => boardId === category, 1);
-			//  return categoriesCopy;
-			// 	);
-			// });
 		}
 	};
 
 	return (
-		<Droppable droppableId={boardId} type="BOARD">
+		<Droppable droppableId={"board-" + board.id} type="BOARD">
 			{(provided, snapshot) => (
 				<Container
 					isDraggingOver={snapshot.isDraggingOver}
@@ -399,7 +375,7 @@ function Board({
 				>
 					<Overlay>
 						<Title className={isScrolled ? "background" : ""}>
-							<h2>{boardId}</h2>
+							<h2>{board.title}</h2>
 							<Buttons>
 								<Button onClick={onEdit}>
 									<MaterialIcon name="edit" />
@@ -419,7 +395,7 @@ function Board({
 							<input
 								{...register("toDo", { required: true })}
 								type="text"
-								placeholder={`${boardId}에 추가`}
+								placeholder={`${board.title}에 추가`}
 							/>
 							<button>
 								<MaterialIcon name="add_circle" />
@@ -431,16 +407,15 @@ function Board({
 						{...provided.droppableProps}
 						onScroll={onScroll}
 					>
-						{toDos.map((toDo, index) => (
+						{board.toDos.map((toDo, index) => (
 							<DraggableCard
-								toDoId={toDo.id}
-								toDoText={toDo.text}
+								toDo={toDo}
 								key={toDo.id}
 								index={index}
-								boardId={boardId}
+								boardId={board.id}
 							/>
 						))}
-						{toDos.length === 0 ? (
+						{board.toDos.length === 0 ? (
 							<Empty>이 보드는 비어 있습니다.</Empty>
 						) : null}
 						{provided.placeholder}
