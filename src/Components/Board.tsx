@@ -311,7 +311,7 @@ function Board({ board, parentProvided, isHovering, style }: IBoardProps) {
 			const boardIndex = prev.findIndex((b) => b.id === board.id);
 			const boardCopy = { ...prev[boardIndex] };
 
-			boardCopy.toDos = [...boardCopy.toDos, newToDo];
+			boardCopy.toDos = [newToDo, ...boardCopy.toDos];
 			toDosCopy.splice(boardIndex, 1, boardCopy);
 
 			return toDosCopy;
