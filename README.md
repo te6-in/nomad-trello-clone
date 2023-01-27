@@ -3,8 +3,10 @@
 
 ![nomad-trello-clone](https://user-images.githubusercontent.com/56245920/215138134-ede92521-476a-4149-a85a-0eac4708f911.png)
 
-## 시작하기
+## 데모
+✨ [여기](https://te6.in/nomad-trello-clone)에서 직접 사용해볼 수 있습니다.
 
+## 시작하기
 ```shell
 git clone https://github.com/te6-in/nomad-trello-clone.git
 cd nomad-trello-clone
