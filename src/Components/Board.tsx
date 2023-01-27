@@ -1,16 +1,15 @@
-import React from "react";
+import { IBoard, toDosState } from "@/atoms";
+import DraggableCard from "@/Components/DraggableCard";
+import React, { useState } from "react";
 import {
 	DraggableProvided,
-	Droppable,
 	DraggingStyle,
+	Droppable,
 	NotDraggingStyle,
 } from "react-beautiful-dnd";
-import DraggableCard from "./DraggableCard";
-import styled from "styled-components";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { IBoard, toDosState } from "../atoms";
 import { useSetRecoilState } from "recoil";
+import styled from "styled-components";
 
 interface MaterialIconProps {
 	name: string;
@@ -44,9 +43,6 @@ const Overlay = styled.div`
 `;
 
 const Title = styled.div`
-	/* display: flex;
-	align-items: center;
-	justify-content: space-between; */
 	display: block;
 	font-size: 1.6rem;
 	font-weight: 600;

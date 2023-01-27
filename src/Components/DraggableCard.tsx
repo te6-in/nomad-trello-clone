@@ -1,9 +1,9 @@
+import { IToDo, toDosState } from "@/atoms";
+import { MaterialIcon } from "@/Components/Board";
 import React from "react";
 import { Draggable } from "react-beautiful-dnd";
 import { useSetRecoilState } from "recoil";
 import styled from "styled-components";
-import { IToDo, toDosState } from "../atoms";
-import { MaterialIcon } from "./Board";
 
 const Button = styled.button`
 	display: flex;
@@ -43,8 +43,6 @@ const Card = styled.li`
 	margin-bottom: 0.6rem;
 	height: 2.75rem;
 	display: block;
-	/* align-items: center;
-	justify-content: space-between; */
 	transition: background-color 0.3s, color 0.3s, box-shadow 0.3s, opacity 0.3s;
 	user-select: none;
 	position: relative;
@@ -176,5 +174,4 @@ function DraggableCard({ toDo, index, boardId }: IDraggableCardProps) {
 	);
 }
 
-// prevents re-rendering of the component
 export default React.memo(DraggableCard);

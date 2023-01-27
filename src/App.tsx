@@ -1,5 +1,7 @@
-import styled, { createGlobalStyle, ThemeProvider } from "styled-components";
-import { lightTheme, darkTheme } from "./theme";
+import { isLightState, toDosState } from "@/atoms";
+import Board, { MaterialIcon } from "@/Components/Board";
+import { darkTheme, lightTheme } from "@/theme";
+import { useEffect } from "react";
 import {
 	DragDropContext,
 	Draggable,
@@ -9,9 +11,7 @@ import {
 	NotDraggingStyle,
 } from "react-beautiful-dnd";
 import { useRecoilState } from "recoil";
-import { isLightState, toDosState } from "./atoms";
-import Board, { MaterialIcon } from "./Components/Board";
-import { useEffect } from "react";
+import styled, { createGlobalStyle, ThemeProvider } from "styled-components";
 
 const Trash = styled.div`
 	display: flex;
@@ -45,8 +45,8 @@ const GlobalStyle = createGlobalStyle`
 	dl, dt, dd, ol, ul, li,
 	fieldset, form, label, legend,
 	table, caption, tbody, tfoot, thead, tr, th, td,
-	article, aside, canvas, details, embed, 
-	figure, figcaption, footer, header, hgroup, 
+	article, aside, canvas, details, embed,
+	figure, figcaption, footer, header, hgroup,
 	menu, nav, output, ruby, section, summary,
 	time, mark, audio, video {
 		margin: 0;
@@ -57,7 +57,7 @@ const GlobalStyle = createGlobalStyle`
 		vertical-align: baseline;
 	}
 	/* HTML5 display-role reset for older browsers */
-	article, aside, details, figcaption, figure, 
+	article, aside, details, figcaption, figure,
 	footer, header, hgroup, menu, nav, section {
 		display: block;
 	}
@@ -207,24 +207,6 @@ function App() {
 	const onDragEnd = ({ draggableId, source, destination }: DropResult) => {
 		if (source.droppableId === "boards") {
 			if (!destination) return;
-
-			// 쓸 일 없음...
-			// if (destination.droppableId === "trash") {
-			// 	const boardId = categories[source.index];
-
-			// 	setToDos((prev) => {
-			// 		const toDosCopy = { ...prev };
-			// 		delete toDosCopy[boardId];
-
-			// 		return toDosCopy;
-			// 	});
-
-			// 	setCategories((prev) =>
-			// 		prev.filter((category) => category !== boardId)
-			// 	);
-
-			// 	return;
-			// }
 
 			if (source.index === destination.index) return;
 

@@ -23,8 +23,6 @@ const instanceOfToDo = (object: unknown): object is IToDo => {
 		object !== null &&
 		object !== undefined &&
 		object.constructor === Object &&
-		"id" in object &&
-		"text" in object &&
 		typeof (object as { id: unknown; text: unknown }).id === "number" &&
 		typeof (object as { id: unknown; text: unknown }).text === "string"
 	);
@@ -35,9 +33,6 @@ const instanceOfBoard = (object: unknown): object is IBoard => {
 		object !== null &&
 		object !== undefined &&
 		object.constructor === Object &&
-		"id" in object &&
-		"title" in object &&
-		"toDos" in object &&
 		typeof (object as { id: unknown; title: unknown; toDos: unknown }).id ===
 			"number" &&
 		typeof (object as { id: unknown; title: unknown; toDos: unknown }).title ===
@@ -97,10 +92,10 @@ export const toDosState = atom<IBoard[]>({
 				{ text: "공부하기", id: 6 },
 				{ text: "운동하기", id: 7 },
 				{ text: "이건 이름이 되게 긴데 마우스를 여기에도 올려보세요", id: 8 },
-				{ text: "할", id: 9 },
-				{ text: "일이", id: 10 },
-				{ text: "왤케", id: 11 },
-				{ text: "많아", id: 12 },
+				{ text: "테스트 1", id: 9 },
+				{ text: "테스트 2", id: 10 },
+				{ text: "테스트 3", id: 11 },
+				{ text: "테스트 4", id: 12 },
 				{ text: "스크롤이랑 드래그도", id: 13 },
 				{ text: "해보세요", id: 14 },
 				{ text: "할 일 1", id: 15 },
