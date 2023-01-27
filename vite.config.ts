@@ -10,4 +10,5 @@ export default defineConfig({
 			"@": resolve(__dirname, "./src"),
 		},
 	},
+	base: "/nomad-trello-clone/",
 });
