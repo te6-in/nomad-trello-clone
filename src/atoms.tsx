@@ -18,32 +18,42 @@ export interface IBoard {
 	toDos: IToDo[];
 }
 
-const instanceOfToDo = (object: any): object is IToDo => {
+const instanceOfToDo = (object: unknown): object is IToDo => {
 	return (
+		object !== null &&
+		object !== undefined &&
 		object.constructor === Object &&
 		"id" in object &&
 		"text" in object &&
-		typeof (object as IToDo).id === "number" &&
-		typeof (object as IToDo).text === "string"
+		typeof (object as { id: unknown; text: unknown }).id === "number" &&
+		typeof (object as { id: unknown; text: unknown }).text === "string"
 	);
 };
 
-const instanceOfBoard = (object: any): object is IBoard => {
+const instanceOfBoard = (object: unknown): object is IBoard => {
 	return (
+		object !== null &&
+		object !== undefined &&
 		object.constructor === Object &&
 		"id" in object &&
 		"title" in object &&
 		"toDos" in object &&
-		typeof (object as IBoard).id === "number" &&
-		typeof (object as IBoard).title === "string" &&
-		(object as IBoard).toDos.every((toDo) => instanceOfToDo(toDo))
+		typeof (object as { id: unknown; title: unknown; toDos: unknown }).id ===
+			"number" &&
+		typeof (object as { id: unknown; title: unknown; toDos: unknown }).title ===
+			"string" &&
+		Array.isArray(
+			(object as { id: unknown; title: unknown; toDos: unknown }).toDos
+		) &&
+		(object as { id: unknown; title: unknown; toDos: unknown[] }).toDos.every(
+			(toDo) => instanceOfToDo(toDo)
+		)
 	);
 };
 
-const instanceOfBoards = (object: any): object is IBoard[] => {
+const instanceOfBoards = (object: unknown): object is IBoard[] => {
 	return (
-		Array.isArray(object) &&
-		(object as IBoard[]).every((board) => instanceOfBoard(board))
+		Array.isArray(object) && object.every((board) => instanceOfBoard(board))
 	);
 };
 
